@@ -53,7 +53,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 // Route to handle user registration
-app.post("/register", async (req, res) => {
+app.post("/api/public/register", async (req, res) => {
   try {
     const { username, email } = req.body;
     const client_id = generateClientId();
@@ -61,12 +61,10 @@ app.post("/register", async (req, res) => {
     const client_secret = generateClientSecret(random_key);
     const user = new User({ username, email, client_id, client_secret });
     await user.save();
-    res
-      .status(201)
-      .json({
-        message: "User registered successfully",
-        user: { ...user._doc, client_secret: random_key },
-      });
+    res.status(201).json({
+      message: "User registered successfully",
+      user: { ...user._doc, client_secret: random_key },
+    });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });
@@ -74,7 +72,7 @@ app.post("/register", async (req, res) => {
 });
 
 // Route to generate authentication token
-app.post("/token", async (req, res) => {
+app.post("/api/public/token", async (req, res) => {
   try {
     const { client_id, client_secret } = req.body;
     const user = await User.findOne({ client_id });
@@ -82,7 +80,7 @@ app.post("/token", async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
     const token = jwt.sign({ client_id: user.client_id }, "your_secret_key");
-    res.status(200).json({ token });
+    res.status(200).json({ access_token: token });
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }
@@ -92,7 +90,7 @@ app.post("/token", async (req, res) => {
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
-  
+
   if (!token) return res.status(401).json({ error: "Unauthorized" });
 
   jwt.verify(token, "your_secret_key", (err, decoded) => {
@@ -103,7 +101,7 @@ const verifyToken = (req, res, next) => {
 };
 
 // Route to get user details
-app.get("/me", verifyToken, async (req, res) => {
+app.get("/api/public/me", verifyToken, async (req, res) => {
   try {
     const user = await User.findOne({ client_id: req.client_id });
     res.status(200).json(user);
@@ -113,7 +111,7 @@ app.get("/me", verifyToken, async (req, res) => {
 });
 
 // Route to get dealers data
-app.get("/dealers", verifyToken, (req, res) => {
+app.get("/api/public/dealers", verifyToken, (req, res) => {
   const dealersData = [
     {
       dealerId: 594939,
@@ -158,7 +156,7 @@ app.get("/dealers", verifyToken, (req, res) => {
 });
 
 // Endpoint to receive price data from webhook
-app.post("/prices", async (req, res) => {
+app.post("/api/public/prices", async (req, res) => {
   try {
     const priceData = req.body;
 
@@ -187,13 +185,15 @@ app.post("/prices", async (req, res) => {
 });
 
 // Endpoint to retrieve all stored prices
-app.get('/prices', async (req, res) => {
+app.get("/api/public/prices", async (req, res) => {
   try {
     const prices = await Price.find();
     return res.status(200).json(prices);
   } catch (error) {
-    console.error('Error retrieving prices:', error);
-    return res.status(500).json({ error: 'An internal server error occurred.' });
+    console.error("Error retrieving prices:", error);
+    return res
+      .status(500)
+      .json({ error: "An internal server error occurred." });
   }
 });
 
