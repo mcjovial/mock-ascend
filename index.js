@@ -156,7 +156,7 @@ app.get("/api/public/dealers", verifyToken, (req, res) => {
 });
 
 // Endpoint to receive price data from webhook
-app.post("/webhooks/price", async (req, res) => {
+app.post("/webhooks/prices", async (req, res) => {
   try {
     const priceData = req.body;
 
@@ -185,7 +185,7 @@ app.post("/webhooks/price", async (req, res) => {
 });
 
 // Endpoint to retrieve all stored prices
-app.get("/api/public/price", async (req, res) => {
+app.get("/api/public/prices", async (req, res) => {
   try {
     const prices = await Price.find();
     return res.status(200).json(prices);
